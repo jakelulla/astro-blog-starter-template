@@ -1,0 +1,126 @@
+---
+interface Props {
+	placeholder?: string;
+	autofocus?: boolean;
+}
+const { placeholder = 'Search…', autofocus = false } = Astro.props;
+---
+
+<form class="search" role="search">
+	<label class="sr-only" for="q">Search</label>
+	<input id="q" name="q" type="search" autocomplete="off" placeholder={placeholder} autofocus={autofocus} />
+	<button type="submit">Search</button>
+</form>
+<p class="status" aria-live="polite"></p>
+<ol class="results"></ol>
+
+<script>
+	type Result = { url: string; title: string; kind: string; snippet: string; score: number };
+
+	const form = document.querySelector<HTMLFormElement>('form.search')!;
+	const input = form.querySelector<HTMLInputElement>('input')!;
+	const status = document.querySelector<HTMLElement>('.status')!;
+	const list = document.querySelector<HTMLOListElement>('ol.results')!;
+
+	function render(results: Result[]) {
+		list.replaceChildren(
+			...results.map((r) => {
+				const li = document.createElement('li');
+				const a = document.createElement('a');
+				a.href = r.url;
+				a.textContent = r.title;
+				const kind = document.createElement('span');
+				kind.className = 'kind';
+				kind.textContent = r.kind;
+				const p = document.createElement('p');
+				p.textContent = r.snippet + (r.snippet.length >= 220 ? '…' : '');
+				li.append(a, kind, p);
+				return li;
+			}),
+		);
+	}
+
+	async function search(q: string) {
+		status.textContent = 'Searching…';
+		try {
+			const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+			const data: { mode: string; results: Result[] } = await res.json();
+			render(data.results);
+			status.textContent = data.results.length
+				? `${data.results.length} result${data.results.length === 1 ? '' : 's'}${data.mode === 'semantic' ? ' · semantic search via Workers AI + Vectorize' : ' · keyword fallback'}`
+				: 'No matches. Try describing what you are looking for differently.';
+		} catch {
+			status.textContent = 'Search is unavailable right now.';
+		}
+	}
+
+	form.addEventListener('submit', (e) => {
+		e.preventDefault();
+		const q = input.value.trim();
+		if (!q) return;
+		history.replaceState(null, '', `?q=${encodeURIComponent(q)}`);
+		search(q);
+	});
+
+	const initial = new URLSearchParams(location.search).get('q');
+	if (initial) {
+		input.value = initial;
+		search(initial);
+	}
+</script>
+
+<style>
+	.search {
+		display: flex;
+		gap: 0.5em;
+		margin-top: 1em;
+	}
+	.search input {
+		flex: 1;
+		min-width: 0;
+		padding: 0.5em 0.75em;
+		border: 2px solid rgb(var(--gray-light));
+		border-radius: 8px;
+		font: inherit;
+		font-size: 16px;
+	}
+	.search input:focus {
+		outline: none;
+		border-color: var(--accent);
+	}
+	.search button {
+		padding: 0.5em 1em;
+		border: none;
+		border-radius: 8px;
+		background: var(--accent);
+		color: white;
+		font: inherit;
+		font-size: 16px;
+		cursor: pointer;
+	}
+	.status {
+		color: rgb(var(--gray));
+		font-size: 0.8em;
+		margin: 0.5em 0 0;
+		min-height: 1.5em;
+	}
+	.results {
+		padding-left: 1.2em;
+	}
+	.results :global(li) {
+		margin-bottom: 1em;
+	}
+	.results :global(.kind) {
+		margin-left: 0.5em;
+		font-size: 0.65em;
+		padding: 0.1em 0.5em;
+		border-radius: 999px;
+		background: rgb(var(--gray-light));
+		vertical-align: middle;
+	}
+	.results :global(p) {
+		margin: 0.2em 0 0;
+		font-size: 0.85em;
+		color: rgb(var(--gray-dark));
+	}
+</style>

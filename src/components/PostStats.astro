@@ -1,0 +1,90 @@
+---
+// View counter + like button, backed by D1 via /api/views and /api/likes.
+interface Props {
+	slug: string;
+}
+const { slug } = Astro.props;
+---
+
+<div class="post-stats" data-slug={slug}>
+	<span class="views" aria-live="polite">&nbsp;</span>
+	<button class="like" type="button" aria-pressed="false" disabled>
+		<span aria-hidden="true">♥</span> <span class="count">–</span>
+	</button>
+</div>
+
+<script>
+	const root = document.querySelector<HTMLElement>('.post-stats')!;
+	const slug = root.dataset.slug!;
+	const views = root.querySelector<HTMLElement>('.views')!;
+	const button = root.querySelector<HTMLButtonElement>('.like')!;
+	const count = button.querySelector<HTMLElement>('.count')!;
+
+	function showLikes(d: { likes: number; liked: boolean }) {
+		count.textContent = String(d.likes);
+		button.setAttribute('aria-pressed', String(d.liked));
+		button.title = d.liked ? 'Unlike' : 'Like this post';
+		button.disabled = false;
+	}
+
+	// Count one view per browser session so refreshes don't inflate the number.
+	const seenKey = `viewed:${slug}`;
+	let seen = false;
+	try {
+		seen = sessionStorage.getItem(seenKey) === '1';
+	} catch {}
+
+	fetch(`/api/views/${slug}`, { method: seen ? 'GET' : 'POST' })
+		.then((r) => r.json())
+		.then((d: { views: number }) => {
+			views.textContent = `${d.views.toLocaleString()} view${d.views === 1 ? '' : 's'}`;
+			try {
+				sessionStorage.setItem(seenKey, '1');
+			} catch {}
+		})
+		.catch(() => {});
+
+	fetch(`/api/likes/${slug}`)
+		.then((r) => r.json())
+		.then(showLikes)
+		.catch(() => {});
+
+	button.addEventListener('click', async () => {
+		button.disabled = true;
+		try {
+			showLikes(await (await fetch(`/api/likes/${slug}`, { method: 'POST' })).json());
+		} catch {
+			button.disabled = false;
+		}
+	});
+</script>
+
+<style>
+	.post-stats {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 1em;
+		font-size: 0.8em;
+		color: rgb(var(--gray));
+	}
+	.like {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35em;
+		padding: 0.2em 0.8em;
+		border: 2px solid rgb(var(--gray-light));
+		border-radius: 999px;
+		background: white;
+		color: rgb(var(--gray));
+		font: inherit;
+		cursor: pointer;
+	}
+	.like[aria-pressed='true'] {
+		border-color: #e0245e;
+		color: #e0245e;
+	}
+	.like:disabled {
+		cursor: default;
+	}
+</style>

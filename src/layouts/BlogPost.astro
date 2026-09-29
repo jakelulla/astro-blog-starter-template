@@ -4,15 +4,18 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
+import PostStats from '../components/PostStats.astro';
+import { SITE_TITLE } from '../consts';
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = CollectionEntry<'blog'>['data'] & { slug: string };
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, slug } = Astro.props;
 ---
 
+<!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={title} description={description} />
+		<BaseHead title={`${title} · ${SITE_TITLE}`} description={description} image={heroImage} />
 		<style>
 			main {
 				width: calc(100% - 2em);
@@ -48,6 +51,12 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 				margin-bottom: 0.5em;
 				color: rgb(var(--gray));
 			}
+			.title hr {
+				margin-top: 1em;
+			}
+			.back {
+				font-size: 0.85em;
+			}
 			.last-updated-on {
 				font-style: italic;
 			}
@@ -74,9 +83,12 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 							}
 						</div>
 						<h1>{title}</h1>
+						<PostStats slug={slug} />
 						<hr />
 					</div>
 					<slot />
+					<hr />
+					<p class="back"><a href="/blog">← All posts</a> · <a href="/">About me</a></p>
 				</div>
 			</article>
 		</main>

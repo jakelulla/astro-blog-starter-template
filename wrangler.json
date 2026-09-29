@@ -1,11 +1,29 @@
 {
-	"name": "astro-blog-starter-template",
+	"name": "jake-lulla",
 	"compatibility_date": "2025-10-08",
 	"compatibility_flags": ["nodejs_compat"],
 	"main": "./dist/_worker.js/index.js",
+	"workers_dev": true,
+	"preview_urls": true,
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "jake-lulla-db",
+			"migrations_dir": "migrations"
+		}
+	],
+	"vectorize": [
+		{
+			"binding": "VECTORIZE",
+			"index_name": "jake-lulla-search"
+		}
+	],
+	"ai": {
+		"binding": "AI"
 	},
 	"observability": {
 		"enabled": true

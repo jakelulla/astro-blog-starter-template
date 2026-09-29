@@ -1,0 +1,27 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Search from '../components/Search.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Search · ${SITE_TITLE}`} description="Semantic search over my projects and posts, powered by Workers AI and Vectorize." />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Search</h1>
+			<p>
+				Ask in plain English. Queries are embedded with Workers AI and matched by meaning against
+				my posts and projects in a Vectorize index, so "shrinking neural nets for phones" finds the
+				quantization work even though those exact words never appear.
+			</p>
+			<Search autofocus placeholder="e.g. how did you make models fit on an iPhone?" />
+		</main>
+		<Footer />
+	</body>
+</html>

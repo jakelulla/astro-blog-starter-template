@@ -1,64 +1,66 @@
-# Astro Starter Kit: Blog
+# jake-lulla
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template)
+My personal site and blog: an about page first, with a blog as its own section. It's built with Astro and runs on Cloudflare Workers.
 
-![Astro Template Preview](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+**Live:** https://jake-lulla.LIVE_SUBDOMAIN.workers.dev
 
-<!-- dash-content-start -->
+## Stack
 
-Create a blog with Astro and deploy it on Cloudflare Workers as a [static website](https://developers.cloudflare.com/workers/static-assets/).
+- **[Astro](https://astro.build)** with the `@astrojs/cloudflare` adapter. Every page is prerendered to static HTML; only the `/api/*` routes run on demand.
+- **Cloudflare Workers.** Serves the static assets and the API routes.
+- **Cloudflare D1.** SQLite at the edge, storing post view counts and likes.
+- **Workers AI.** Runs `@cf/baai/bge-base-en-v1.5` to create 768-dimensional text embeddings.
+- **Cloudflare Vectorize.** A vector index (cosine metric) for semantic search.
 
-Features:
+## Features
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-- ✅ Built-in Observability logging
+- **About-me home page.** Projects, skills, and coursework are rendered from [`src/data/projects.ts`](src/data/projects.ts).
+- **Blog.** Markdown/MDX posts with RSS and a sitemap.
+- **View counter.** One D1 upsert with `RETURNING` per view, and at most one count per browser session.
+- **Likes.** One like per visitor per post, enforced by a composite primary key. Visitors are identified by a salted SHA-256 hash of their IP, so raw IPs are never stored.
+- **AI semantic search** at [`/search`](src/pages/search.astro):
+  1. Posts are chunked and projects become one document each.
+  2. Both are embedded with Workers AI and upserted into Vectorize.
+  3. Each query is embedded the same way and ranked by cosine similarity.
+  4. If Workers AI or Vectorize is unavailable, search falls back to keyword matching.
 
-<!-- dash-content-end -->
+## API
 
-## Getting Started
+| Route | Method | What it does |
+| --- | --- | --- |
+| `/api/views/:slug` | `GET` / `POST` | Read the view count / increment it |
+| `/api/likes/:slug` | `GET` / `POST` | Read the like state / toggle it |
+| `/api/search?q=` | `GET` | Semantic search over posts and projects |
+| `/api/reindex` | `POST` | Re-embed all content into Vectorize (needs `Authorization: Bearer $REINDEX_TOKEN`) |
 
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
+## Running it yourself
 
 ```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/astro-blog-starter-template
+npm install
+
+# One-time Cloudflare setup
+npx wrangler login
+npx wrangler d1 create jake-lulla-db            # paste the database_id into wrangler.json
+npx wrangler vectorize create jake-lulla-search --dimensions=768 --metric=cosine
+npm run db:migrate
+npx wrangler secret put REINDEX_TOKEN
+
+# Deploy, then build the search index
+npm run build && npm run deploy
+curl -X POST https://<your-worker>.workers.dev/api/reindex \
+  -H "Authorization: Bearer $REINDEX_TOKEN" -H "Content-Type: application/json"
 ```
 
-A live public deployment of this template is available at [https://astro-blog-starter-template.templates.workers.dev](https://astro-blog-starter-template.templates.workers.dev)
+For local development:
 
-## 🚀 Project Structure
+```bash
+cp .dev.vars.example .dev.vars
+npm run db:migrate:local
+npm run preview   # astro build + wrangler dev
+```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
-
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
-
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                           | Action                                           |
-| :-------------------------------- | :----------------------------------------------- |
-| `npm install`                     | Installs dependencies                            |
-| `npm run dev`                     | Starts local dev server at `localhost:4321`      |
-| `npm run build`                   | Build your production site to `./dist/`          |
-| `npm run preview`                 | Preview your build locally, before deploying     |
-| `npm run astro ...`               | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help`         | Get help using the Astro CLI                     |
-| `npm run build && npm run deploy` | Deploy your production site to Cloudflare        |
-| `npm wrangler tail`               | View real-time logs for all Workers              |
-
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Workers AI has no local emulator, so `wrangler dev` needs a Cloudflare login to proxy that binding. Without one, search falls back to keyword matching.
 
 ## Credit
 
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+Started from Cloudflare's [Astro blog starter](https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template). The base styles are adapted from [Bear Blog](https://github.com/HermanMartinus/bearblog/) (MIT).

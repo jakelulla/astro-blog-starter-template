@@ -2,48 +2,238 @@
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import FormattedDate from '../components/FormattedDate.astro';
+import { SITE_TITLE, SITE_DESCRIPTION, LINKS } from '../consts';
+import { projects, skills, coursework } from '../data/projects';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog'))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+	.slice(0, 3);
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<style>
+			.intro h1 {
+				margin-bottom: 0.25em;
+			}
+			.lede {
+				font-size: 1.15em;
+				color: rgb(var(--gray-dark));
+			}
+			.meta {
+				color: rgb(var(--gray));
+				margin-top: -0.5em;
+			}
+			.cta {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.75em;
+				margin: 1.5em 0 0;
+			}
+			.cta a {
+				padding: 0.4em 1em;
+				border: 2px solid var(--accent);
+				border-radius: 999px;
+				text-decoration: none;
+				font-size: 0.85em;
+			}
+			.cta a.primary {
+				background: var(--accent);
+				color: white;
+			}
+			section {
+				margin-top: 3.5em;
+			}
+			section > h2 {
+				font-size: 1.5em;
+				border-bottom: 1px solid rgb(var(--gray-light));
+				padding-bottom: 0.25em;
+				margin-bottom: 1em;
+			}
+			.project {
+				margin-bottom: 2.25em;
+				scroll-margin-top: 1em;
+			}
+			.project h3 {
+				font-size: 1.2em;
+				margin-bottom: 0.1em;
+			}
+			.project .context {
+				color: rgb(var(--gray));
+				font-size: 0.8em;
+				margin: 0 0 0.5em;
+			}
+			.project p {
+				margin: 0 0 0.5em;
+			}
+			.project ul {
+				font-size: 0.85em;
+				padding-left: 1.2em;
+				margin: 0 0 0.5em;
+			}
+			.tags {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.4em;
+				padding: 0;
+				margin: 0;
+				list-style: none;
+			}
+			.tags li,
+			.chips li {
+				font-size: 0.7em;
+				padding: 0.1em 0.6em;
+				border-radius: 999px;
+				background: rgb(var(--gray-light));
+			}
+			.skills dt {
+				font-weight: 700;
+				color: rgb(var(--black));
+			}
+			.skills dd {
+				margin: 0 0 1em;
+			}
+			.chips {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.4em;
+				padding: 0;
+				margin: 0.3em 0 0;
+				list-style: none;
+			}
+			.coursework {
+				columns: 2;
+				font-size: 0.85em;
+				padding-left: 1.2em;
+			}
+			.posts {
+				list-style: none;
+				padding: 0;
+			}
+			.posts li {
+				margin-bottom: 0.75em;
+			}
+			.posts time {
+				color: rgb(var(--gray));
+				font-size: 0.8em;
+				margin-right: 0.75em;
+			}
+			@media (max-width: 720px) {
+				.coursework {
+					columns: 1;
+				}
+			}
+		</style>
 	</head>
 	<body>
 		<Header />
 		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This
-				template serves as a lightweight, minimally-styled starting point for anyone looking to build
-				a personal website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to <a href="https://docs.astro.build/"
-					>read the docs
-				</a> or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out <a
-					href="https://github.com/Charca/astro-blog-template"
-					>astro-blog-template
-				</a> by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
+			<div class="intro">
+				<h1>Hi, I'm Jake.</h1>
+				<p class="meta">
+					Computer Engineering @ University of Illinois Urbana-Champaign · Class of 2028
+				</p>
+				<p class="lede">
+					I build software that sits close to the hardware: on-device machine learning, operating
+					systems, and the pipelines that make models small and fast enough to run where the data
+					lives.
+				</p>
+				<p>
+					I'm a B.S. Computer Engineering student with a minor in Computational Science, a James
+					Scholar with a 3.82 GPA. This summer I solo-built <a href="#phototrove">PhotoTrove</a>, a
+					client-commissioned iOS app that runs CLIP search and face detection entirely on the phone.
+					In class I've written a RISC-V kernel from the bootloader up and trained Transformers
+					from scratch. Right now I'm taking parallel programming, networks, graphics, and robotics.
+				</p>
+				<p>
+					I'm looking for software engineering and ML internships for <strong>Summer 2027</strong>.
+				</p>
+				<div class="cta">
+					<a class="primary" href={`mailto:${LINKS.email}`}>Email me</a>
+					<a href={LINKS.linkedin} target="_blank" rel="noopener">LinkedIn</a>
+					<a href={LINKS.github} target="_blank" rel="noopener">GitHub</a>
+					<a href="/blog">Read the blog</a>
+				</div>
+			</div>
+
+			<section>
+				<h2>Projects</h2>
+				{
+					projects.map((p) => (
+						<article class="project" id={p.slug}>
+							<h3>
+								{p.name}
+								{p.link && (
+									<>
+										{' '}
+										<a href={p.link.href} style="font-size:0.7em">
+											{p.link.label} ↗
+										</a>
+									</>
+								)}
+							</h3>
+							<p class="context">{p.context}</p>
+							<p>{p.summary}</p>
+							<ul>
+								{p.highlights.map((h) => (
+									<li>{h}</li>
+								))}
+							</ul>
+							<ul class="tags">
+								{p.tags.map((t) => (
+									<li>{t}</li>
+								))}
+							</ul>
+						</article>
+					))
+				}
+			</section>
+
+			<section>
+				<h2>Skills</h2>
+				<dl class="skills">
+					{
+						Object.entries(skills).map(([group, items]) => (
+							<>
+								<dt>{group}</dt>
+								<dd>
+									<ul class="chips">
+										{items.map((s) => (
+											<li>{s}</li>
+										))}
+									</ul>
+								</dd>
+							</>
+						))
+					}
+				</dl>
+			</section>
+
+			<section>
+				<h2>Coursework</h2>
+				<ul class="coursework">
+					{coursework.map((c) => <li>{c}</li>)}
+				</ul>
+			</section>
+
+			<section>
+				<h2>Latest writing</h2>
+				<ul class="posts">
+					{
+						posts.map((post) => (
+							<li>
+								<FormattedDate date={post.data.pubDate} />
+								<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+							</li>
+						))
+					}
+				</ul>
+				<p><a href="/blog">All posts →</a> · <a href="/search">Search the site with AI →</a></p>
+			</section>
 		</main>
 		<Footer />
 	</body>
