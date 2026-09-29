@@ -2,7 +2,7 @@
 
 My personal site and blog: an about page first, with a blog as its own section. It's built with Astro and runs on Cloudflare Workers.
 
-**Live:** https://jake-lulla.LIVE_SUBDOMAIN.workers.dev
+**Live:** https://jake-lulla.jalulla2.workers.dev
 
 ## Stack
 

@@ -1,7 +1,9 @@
 {
 	"name": "jake-lulla",
 	"compatibility_date": "2025-10-08",
-	"compatibility_flags": ["nodejs_compat"],
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"main": "./dist/_worker.js/index.js",
 	"workers_dev": true,
 	"preview_urls": true,
@@ -13,6 +15,7 @@
 		{
 			"binding": "DB",
 			"database_name": "jake-lulla-db",
+			"database_id": "20983b22-9f7a-4bff-9bb3-ff32daf3de8c",
 			"migrations_dir": "migrations"
 		}
 	],

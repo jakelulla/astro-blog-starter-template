@@ -46,11 +46,16 @@ Indexing runs through a token-protected `POST /api/reindex` endpoint that I call
 
 **My own API returned 403 to curl.** When I tested the likes endpoint from the terminal, every POST came back `Cross-site POST form submissions are forbidden`. Astro enables CSRF protection (`security.checkOrigin`) by default for on-demand routes, and a bare `curl -X POST` has no `Origin` header, so it looks like a cross-site form post. Browsers' `fetch` sends the header automatically, so real visitors were never affected. It still took me a minute to realize my code wasn't the problem and the framework was doing its job.
 
+**The first deploy looked broken.** Right after `wrangler deploy`, the blog index loaded but the home page, the post, and `/search` all returned 404, and my first reindex call failed with Cloudflare error 1042. Nothing was wrong with the code: the `workers.dev` subdomain was brand new and still propagating. About twenty seconds later every route returned 200. I almost started debugging the asset routing before I tried waiting.
+
+**Search returned nothing, then everything.** The reindex call reported 11 vectors, but the first queries came back empty. Vectorize applies writes asynchronously, so vectors can't be queried until the index has processed the mutation. `wrangler vectorize info` showed the processed-up-to timestamp catching up, and after that the same queries ranked the right pages first. The tests also showed my similarity cutoff was a little too loose: "chocolate cake recipe" scored 0.556 against this post. I raised the threshold from 0.55 to 0.58, which filters that out while keeping every real hit. That's the same threshold-calibration problem I worked on in PhotoTrove, at a much smaller scale.
+
 ## What I learned
 
 - **Static where possible, dynamic where it matters.** Every page on this site is prerendered HTML served from Cloudflare's asset cache. Only four tiny API routes run code. The page loads instantly and the counters fill in a moment later.
 - **Embeddings are a general tool.** The same pattern (encode everything into one vector space, rank by cosine similarity) powered photo search on an iPhone and text search on the edge. The model and the storage changed; the idea didn't.
 - **Design for the binding being missing.** Anything that depends on a remote service should have a fallback, both for local development and for production resilience.
-- **Read the 403 before you debug your code.** The error message told me exactly what was happening; I just had to believe it.
+- **Read the error before you debug your code.** Both the 403 and the post-deploy 404s were the platform behaving correctly. The fix was understanding it, not changing code.
+- **Eventual consistency is a real thing you will hit.** New subdomains propagate, and vector indexes process writes asynchronously. "It didn't work the first time" isn't the same as "it doesn't work."
 
 The source is on [GitHub](https://github.com/jakelulla/jake-lulla-blog). If you try the search bar and it finds something surprising, good or bad, I'd like to hear about it.

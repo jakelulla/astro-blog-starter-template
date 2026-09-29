@@ -4,8 +4,8 @@ import { dedupe, embed, keywordSearch, type SearchResult } from "../../lib/searc
 export const prerender = false;
 
 const LIMIT = 5;
-// bge-base cosine scores for unrelated text tend to sit below ~0.55.
-const MIN_SCORE = 0.55;
+// bge-base cosine scores for unrelated text tend to sit below ~0.58.
+const MIN_SCORE = 0.58;
 
 export const GET: APIRoute = async ({ url, locals }) => {
 	const q = url.searchParams.get("q")?.trim().slice(0, 200) ?? "";
